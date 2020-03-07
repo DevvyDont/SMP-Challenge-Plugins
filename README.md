@@ -15,7 +15,7 @@ All plugins can be drag and dropped in the plugins folder, with most plugins req
 
 - MissingChunks
 
-  When new chunks are generated, every other chunk will be completely missing. *Currently is not functional*
+  When new chunks are generated, every other chunk will be completely missing. *Is functional, but very taxing on the server, in the future this plugin will either pre-generate chunks or find more efficient means*
 
 - Randomizer
 
