@@ -1,0 +1,9 @@
+name: TeamDeath
+version: ${project.version}
+main: me.devvydoo.teamdeath.TeamDeath
+api-version: 1.13
+commands:
+  deathstart:
+    description: Starts the challenge
+    permission: op
+    usage: /deathstart

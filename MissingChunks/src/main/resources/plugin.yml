@@ -1,0 +1,4 @@
+name: MissingChunks
+version: ${project.version}
+main: me.devvydoo.missingchunks.MissingChunks
+api-version: 1.13

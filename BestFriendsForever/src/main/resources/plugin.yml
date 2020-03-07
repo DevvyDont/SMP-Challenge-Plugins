@@ -1,0 +1,13 @@
+name: BestFriendsForever
+version: ${project.version}
+main: me.devvy.bestfriendsforever.BestFriendsForever
+api-version: 1.13
+commands:
+  start:
+    description: Starts the challenge
+    usage: /start
+    permission: op
+  stop:
+    description: Stops the challenge
+    usage: /stop
+    permission: op

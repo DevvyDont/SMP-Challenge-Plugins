@@ -1,0 +1,4 @@
+name: Randomizer
+version: ${project.version}
+main: me.devvydoo.randomizer.Randomizer
+api-version: 1.13

@@ -1,0 +1,9 @@
+name: SharedInventory
+version: ${project.version}
+main: me.devvydoo.sharedinventory.SharedInventory
+api-version: 1.13
+commands:
+  sharedinv:
+    description: Starts the challenge
+    permission: op
+    usage: /sharedinv

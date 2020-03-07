@@ -1,0 +1,9 @@
+name: GravityFlip
+version: ${project.version}
+main: me.devvydoo.gravityflip.GravityFlip
+api-version: 1.13
+commands:
+  gravityflip:
+    description: Toggles gravity flipping
+    usage: /gravityflip < start | stop >
+    permission: op
