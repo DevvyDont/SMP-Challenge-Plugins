@@ -1,24 +1,31 @@
 package me.devvydoo.randomizer;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.loot.LootContext;
+import org.bukkit.loot.LootTables;
+import org.bukkit.loot.Lootable;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 
 public final class Randomizer extends JavaPlugin implements Listener {
 
 
-    private HashMap<Material, Material> materialMap = new HashMap<>();
+    private final HashMap<Material, Material> materialMap = new HashMap<>();
+    private final HashMap<EntityType, LootTables> entityMap = new HashMap<>();
 
     private Material getRandomMaterial(){
         int randomIndex = (int)(Math.random() * Material.values().length);
@@ -28,6 +35,23 @@ public final class Randomizer extends JavaPlugin implements Listener {
             return getRandomMaterial();
 
         return ret;
+
+    }
+
+    private LootTables getRandomLootTable(){
+        int randomIndex = (int)(Math.random() * LootTables.values().length);
+        return LootTables.values()[randomIndex];
+    }
+
+    private ArrayList<ItemStack> getRandomizedItemDrops(Collection<ItemStack> originalDrops) {
+        ArrayList<ItemStack> drops = new ArrayList<>();
+
+        for (ItemStack drop : originalDrops) {
+            drop.setType(materialMap.get(drop.getType()));
+            drops.add(drop);
+        }
+
+        return drops;
     }
 
     private void doRecycleTaskLater(){
@@ -49,15 +73,30 @@ public final class Randomizer extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
 
-        // Assign a random material to map to a different material for every material in the game
-        for (Material material : Material.values()){
-            materialMap.put(material, getRandomMaterial());
-        }
+        ArrayList<Material> shuffledMats = new ArrayList<>(Arrays.asList(Material.values()));
+
+        // Remove things that break
+        shuffledMats.removeIf(m -> (!m.isItem()));
+
+        // Shuffle
+        Collections.shuffle(shuffledMats);
+
+        // Assign as much as we can
+        for (int i = 0; i < shuffledMats.size(); i++)
+            materialMap.put(Material.values()[i], shuffledMats.get(i));
+
+        // Assign the rest random materials
+        for (int i = shuffledMats.size(); i < Material.values().length; i++)
+            materialMap.put(Material.values()[i], getRandomMaterial());
 
         getServer().broadcastMessage(ChatColor.RED.toString() + ChatColor.BOLD + "Items have been randomized!!!");
-
         getServer().getPluginManager().registerEvents(this, this);
-        doRecycleTaskLater();
+
+
+
+        for (EntityType entityType : EntityType.values())
+            entityMap.put(entityType, getRandomLootTable());
+//        doRecycleTaskLater();
     }
 
     /**
@@ -68,17 +107,11 @@ public final class Randomizer extends JavaPlugin implements Listener {
     @EventHandler
     public void onBlockBroken(BlockBreakEvent event){
 
-        ArrayList<ItemStack> itemsToDrop = new ArrayList<>();
-
-        for (ItemStack drop : event.getBlock().getDrops(event.getPlayer().getInventory().getItemInMainHand())){
-            drop.setType(materialMap.get(drop.getType()));
-            itemsToDrop.add(drop);
-        }
+        ArrayList<ItemStack> itemsToDrop = getRandomizedItemDrops(event.getBlock().getDrops(event.getPlayer().getInventory().getItemInMainHand()));
 
         event.setDropItems(false);
-        for (ItemStack item : itemsToDrop) {
+        for (ItemStack item : itemsToDrop)
             event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), item);
-        }
 
     }
 
@@ -89,9 +122,13 @@ public final class Randomizer extends JavaPlugin implements Listener {
      */
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event){
-        for (ItemStack drop : event.getDrops()){
-            drop.setType(materialMap.get(drop.getType()));
-        }
+
+        if (event.getEntity() instanceof Player)
+            return;
+
+        ArrayList<ItemStack> itemsToDrop = getRandomizedItemDrops(event.getDrops());
+        event.getDrops().clear();
+        event.getDrops().addAll(itemsToDrop);
     }
 
     /**
@@ -103,7 +140,21 @@ public final class Randomizer extends JavaPlugin implements Listener {
     public void onFishCatch(PlayerFishEvent event){
         if (event.getCaught() instanceof Item){
             Item item = (Item) event.getCaught();
-            item.getItemStack().setType(materialMap.get(item.getItemStack().getType()));
+            ArrayList<ItemStack> itemsToDrop = getRandomizedItemDrops(Collections.singletonList(item.getItemStack()));
+
+            if (itemsToDrop.isEmpty())
+                return;
+
+            for (int i = 0; i < itemsToDrop.size(); i++) {
+
+                if (i == 0)
+                    item.getItemStack().setType(itemsToDrop.get(i).getType());
+                else
+                    event.getPlayer().getWorld().dropItemNaturally(event.getPlayer().getLocation(), itemsToDrop.get(i));
+
+
+            }
+
         }
     }
 
